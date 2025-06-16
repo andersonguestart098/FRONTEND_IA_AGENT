@@ -2,29 +2,38 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-const Login = () => {
+const Login = ({ onLogin }: { onLogin: () => void }) => {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-  const navigate = useNavigate();
+  const [mensagem, setMensagem] = useState('');
+  const navigate = useNavigate(); // <-- aqui
 
   const handleLogin = async () => {
     try {
-      const res = await axios.post('http://localhost:8000/login', { email, senha });
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user_id', res.data.user_id);
-      localStorage.setItem('session_id', res.data.session_id);
-      navigate('/chat');
-    } catch (error) {
-      alert('Login inválido.');
+      const form = new FormData();
+      form.append('email', email);
+      form.append('senha', senha);
+
+      const res = await axios.post('http://localhost:8000/login', form);
+
+      localStorage.setItem('sessionId', res.data.sessionId);
+      localStorage.setItem('userId', res.data.userId);
+
+      setMensagem(`✅ ${res.data.message}`);
+      onLogin(); // atualiza estado global
+      navigate('/chat'); // <-- redireciona para /chat
+    } catch (err: any) {
+      setMensagem(`❌ ${err.response?.data?.detail || 'Erro ao fazer login.'}`);
     }
   };
 
   return (
-    <div style={{ padding: 20 }}>
+    <div>
       <h2>Login</h2>
-      <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} /><br />
-      <input type="password" placeholder="Senha" value={senha} onChange={e => setSenha(e.target.value)} /><br />
-      <button onClick={handleLogin}>Entrar</button>
+      <input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+      <input placeholder="Senha" type="password" value={senha} onChange={e => setSenha(e.target.value)} />
+      <button onClick={handleLogin}>Login</button>
+      <p>{mensagem}</p>
     </div>
   );
 };
